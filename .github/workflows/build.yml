@@ -10,6 +10,7 @@ env:
   QT_VERSION: 6.5.0
   CMAKE_VERSION: 3.24.0
   BUILD_TYPE: Release
+  PROJECT_NAME: recursive_n_queens_mit_qt
 
 jobs:
   build:
@@ -75,32 +76,66 @@ jobs:
       - name: Configure CMake (Windows)
         if: runner.os == 'Windows'
         run: |
+          echo "Configuring CMake for Windows..."
           cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DQt6_DIR=${{github.workspace}}/qt/lib/cmake/Qt6
+          echo "CMake configuration completed."
 
       - name: Configure CMake (Unix)
         if: runner.os != 'Windows'
         run: |
+          echo "Configuring CMake for Unix..."
           cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+          echo "CMake configuration completed."
 
       - name: Build
-        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+        run: |
+          echo "Starting build process..."
+          cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+          echo "Build completed."
 
       - name: Package Windows
         if: runner.os == 'Windows'
+        shell: cmd
         run: |
-          mkdir ${{github.workspace}}/package
-          copy ${{github.workspace}}/build/Release/*.exe ${{github.workspace}}/package/
-          windeployqt ${{github.workspace}}/package/*.exe --no-translations
+          echo "Starting Windows packaging..."
+          mkdir package
+          
+          echo "Searching for executable..."
+          if exist "build\${{env.BUILD_TYPE}}\${{env.PROJECT_NAME}}.exe" (
+            echo "Found executable in build\${{env.BUILD_TYPE}}"
+            copy "build\${{env.BUILD_TYPE}}\${{env.PROJECT_NAME}}.exe" package\
+          ) else if exist "build\${{env.PROJECT_NAME}}.exe" (
+            echo "Found executable in build"
+            copy "build\${{env.PROJECT_NAME}}.exe" package\
+          ) else (
+            echo "Error: Could not find executable. Directory contents:"
+            dir /s build\*.exe
+            exit 1
+          )
+          
+          echo "Running windeployqt..."
+          windeployqt --no-translations package\${{env.PROJECT_NAME}}.exe
+          
+          echo "Windows packaging completed."
 
       - name: Package Unix
         if: runner.os != 'Windows'
         run: |
-          mkdir ${{github.workspace}}/package
-          cp ${{github.workspace}}/build/recursive_n_queens_mit_qt ${{github.workspace}}/package/
+          echo "Starting Unix packaging..."
+          mkdir -p package
+          if [ -f "build/${{env.PROJECT_NAME}}" ]; then
+            echo "Found executable in build/"
+            cp "build/${{env.PROJECT_NAME}}" package/
+          else
+            echo "Error: Could not find executable. Directory contents:"
+            find build -type f -executable
+            exit 1
+          fi
+          echo "Unix packaging completed."
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: n-queens-${{ runner.os }}
+          name: ${{env.PROJECT_NAME}}-${{ runner.os }}
           path: ${{github.workspace}}/package/
-          compression-level: 9 # Maximum compression
+          compression-level: 9
