@@ -1,15 +1,10 @@
-name: Build and Release
+name: Build and Test
 
 on:
   push:
     branches: [ main ]
-    tags:
-      - 'v*'
   pull_request:
     branches: [ main ]
-
-permissions:
-  contents: write
 
 env:
   QT_VERSION: 6.5.0
@@ -29,53 +24,26 @@ jobs:
             os: windows-latest,
             cc: "cl",
             cxx: "cl",
-            artifact_name: "windows-x64"
+            environment_script: "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
           }
           - {
             name: "Ubuntu Latest GCC",
             os: ubuntu-latest,
             cc: "gcc",
-            cxx: "g++",
-            artifact_name: "linux-x64"
+            cxx: "g++"
           }
           - {
             name: "macOS Latest Clang",
             os: macos-latest,
             cc: "clang",
-            cxx: "clang++",
-            artifact_name: "macos-x64"
+            cxx: "clang++"
           }
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-
-      - name: Get version information
-        id: version
-        shell: bash
-        run: |
-          # Get the build number (commit count)
-          BUILD_NUMBER=$(git rev-list --count HEAD)
-          echo "BUILD_NUMBER=${BUILD_NUMBER}" >> $GITHUB_ENV
-          
-          # Get short SHA
-          SHA_SHORT=$(git rev-parse --short HEAD)
-          echo "SHA_SHORT=${SHA_SHORT}" >> $GITHUB_ENV
-          
-          # Set version based on tag or development build
-          if [[ $GITHUB_REF == refs/tags/* ]]; then
-            VERSION=${GITHUB_REF#refs/tags/}
-            echo "VERSION=${VERSION}" >> $GITHUB_ENV
-            echo "RELEASE_TAG=${VERSION}" >> $GITHUB_ENV
-            echo "IS_RELEASE=true" >> $GITHUB_ENV
-          else
-            VERSION="dev-build.${BUILD_NUMBER}"
-            echo "VERSION=${VERSION}" >> $GITHUB_ENV
-            echo "RELEASE_TAG=dev-${SHA_SHORT}" >> $GITHUB_ENV
-            echo "IS_RELEASE=false" >> $GITHUB_ENV
-          fi
+          submodules: recursive
 
       - name: Install Qt (Windows)
         if: runner.os == 'Windows'
@@ -105,55 +73,69 @@ jobs:
         with:
           cmake-version: ${{env.CMAKE_VERSION}}
 
-      - name: Configure CMake
+      - name: Configure CMake (Windows)
+        if: runner.os == 'Windows'
         run: |
-          cmake -B ${{github.workspace}}/build \
-                -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
-                -DPROJECT_VERSION="${{ env.VERSION }}"
+          echo "Configuring CMake for Windows..."
+          cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DQt6_DIR=${{github.workspace}}/qt/lib/cmake/Qt6
+          echo "CMake configuration completed."
+
+      - name: Configure CMake (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          echo "Configuring CMake for Unix..."
+          cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+          echo "CMake configuration completed."
 
       - name: Build
-        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+        run: |
+          echo "Starting build process..."
+          cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+          echo "Build completed."
 
       - name: Package Windows
         if: runner.os == 'Windows'
         shell: cmd
         run: |
+          echo "Starting Windows packaging..."
           mkdir package
-          copy "build\${{env.BUILD_TYPE}}\${{env.PROJECT_NAME}}.exe" "package\${{env.PROJECT_NAME}}.exe"
-          windeployqt --no-translations "package\${{env.PROJECT_NAME}}.exe"
-          cd package
-          7z a -tzip "..\${{env.PROJECT_NAME}}-${{ matrix.config.artifact_name }}-${{ env.VERSION }}.zip" *
+          
+          echo "Searching for executable..."
+          if exist "build\${{env.BUILD_TYPE}}\${{env.PROJECT_NAME}}.exe" (
+            echo "Found executable in build\${{env.BUILD_TYPE}}"
+            copy "build\${{env.BUILD_TYPE}}\${{env.PROJECT_NAME}}.exe" package\
+          ) else if exist "build\${{env.PROJECT_NAME}}.exe" (
+            echo "Found executable in build"
+            copy "build\${{env.PROJECT_NAME}}.exe" package\
+          ) else (
+            echo "Error: Could not find executable. Directory contents:"
+            dir /s build\*.exe
+            exit 1
+          )
+          
+          echo "Running windeployqt..."
+          windeployqt --no-translations package\${{env.PROJECT_NAME}}.exe
+          
+          echo "Windows packaging completed."
 
       - name: Package Unix
         if: runner.os != 'Windows'
         run: |
+          echo "Starting Unix packaging..."
           mkdir -p package
-          cp "build/${{env.PROJECT_NAME}}" package/
-          cd package
-          if [ "${{ runner.os }}" == "Linux" ]; then
-            tar czf "../${{env.PROJECT_NAME}}-${{ matrix.config.artifact_name }}-${{ env.VERSION }}.tar.gz" *
+          if [ -f "build/${{env.PROJECT_NAME}}" ]; then
+            echo "Found executable in build/"
+            cp "build/${{env.PROJECT_NAME}}" package/
           else
-            zip -r "../${{env.PROJECT_NAME}}-${{ matrix.config.artifact_name }}-${{ env.VERSION }}.zip" *
+            echo "Error: Could not find executable. Directory contents:"
+            find build -type f -executable
+            exit 1
           fi
+          echo "Unix packaging completed."
 
-      - name: Delete old development release
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: dev-drprasad/delete-tag-and-release@v1.0
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
         with:
-          tag_name: dev-latest
-          delete_release: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Create Release
-        if: github.event_name != 'pull_request'
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ env.IS_RELEASE == 'true' && env.RELEASE_TAG || 'dev-latest' }}
-          name: ${{ env.IS_RELEASE == 'true' && format('Release {0}', env.VERSION) || format('Development Build {0} ({1})', env.BUILD_NUMBER, env.SHA_SHORT) }}
-          files: |
-            ${{env.PROJECT_NAME}}-${{ matrix.config.artifact_name }}-${{ env.VERSION }}.*
-          prerelease: ${{ env.IS_RELEASE != 'true' }}
-          generate_release_notes: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          name: ${{env.PROJECT_NAME}}-${{ runner.os }}
+          path: ${{github.workspace}}/package/
+          compression-level: 9
