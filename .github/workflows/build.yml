@@ -1,0 +1,110 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  QT_VERSION: 6.5.0
+  CMAKE_VERSION: 3.24.0
+  BUILD_TYPE: Release
+
+jobs:
+  build:
+    name: ${{ matrix.config.name }}
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      matrix:
+        config:
+          - {
+            name: "Windows Latest MSVC",
+            os: windows-latest,
+            cc: "cl",
+            cxx: "cl",
+            environment_script: "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
+          }
+          - {
+            name: "Ubuntu Latest GCC",
+            os: ubuntu-latest,
+            cc: "gcc",
+            cxx: "g++"
+          }
+          - {
+            name: "macOS Latest Clang",
+            os: macos-latest,
+            cc: "clang",
+            cxx: "clang++"
+          }
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Install Qt (Windows)
+        if: runner.os == 'Windows'
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: ${{env.QT_VERSION}}
+          host: windows
+          target: desktop
+          arch: win64_msvc2019_64
+          dir: ${{github.workspace}}/qt
+          setup-python: false
+
+      - name: Install Qt (Ubuntu)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qt6-base-dev qt6-declarative-dev
+
+      - name: Install Qt (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew update
+          brew install qt@6
+
+      - name: Set up CMake
+        uses: jwlawson/actions-setup-cmake@v1.13
+        with:
+          cmake-version: ${{env.CMAKE_VERSION}}
+
+      - name: Configure CMake (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+
+      - name: Configure CMake (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+
+      - name: Build
+        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+
+      # Optional: Run tests if you have them
+      #- name: Test
+      #  working-directory: ${{github.workspace}}/build
+      #  run: ctest -C ${{env.BUILD_TYPE}} --output-on-failure
+
+      - name: Package Windows
+        if: runner.os == 'Windows'
+        run: |
+          mkdir ${{github.workspace}}/package
+          copy ${{github.workspace}}/build/Release/*.exe ${{github.workspace}}/package/
+          windeployqt ${{github.workspace}}/package/*.exe --no-translations
+
+      - name: Package Unix
+        if: runner.os != 'Windows'
+        run: |
+          mkdir ${{github.workspace}}/package
+          cp ${{github.workspace}}/build/n-queens-visualization ${{github.workspace}}/package/
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: n-queens-${{ runner.os }}
+          path: ${{github.workspace}}/package/
