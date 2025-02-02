@@ -13,8 +13,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), N(8), delay(500),
     QApplication::setStyle(style);
 
     // UI Layout
-    QWidget *centralWidget = new QWidget(this);
-    QVBoxLayout *layout = new QVBoxLayout(centralWidget);
+    centralWidget = new QWidget(this);
+    layout = new QVBoxLayout(centralWidget);
 
     // Input Field
     inputField = new QLineEdit(centralWidget);
@@ -22,7 +22,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), N(8), delay(500),
     //layout->addWidget(inputField);
 
     // Button Layout
-    QHBoxLayout *buttonLayout = new QHBoxLayout();
+    buttonLayout = new QHBoxLayout();
     startButton = new QPushButton("Start", centralWidget);
     resetButton = new QPushButton("Reset", centralWidget);
     buttonLayout->addWidget(inputField);

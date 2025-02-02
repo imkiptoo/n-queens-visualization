@@ -30,6 +30,10 @@ private slots:
 private:
     QGraphicsScene *scene;
     QGraphicsView *view;
+    QWidget *centralWidget;
+    QVBoxLayout *layout;
+    QHBoxLayout *buttonLayout;
+
     QLineEdit *inputField;
     QPushButton *startButton;
     QPushButton *resetButton;
