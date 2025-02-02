@@ -1,6 +1,20 @@
 cmake_minimum_required(VERSION 3.16)  # Lower version for better compatibility
 project(recursive_n_queens_mit_qt VERSION 1.0.0 LANGUAGES CXX)
 
+# Add version information
+set(PROJECT_VERSION_MAJOR 1)
+set(PROJECT_VERSION_MINOR 0)
+if(DEFINED PROJECT_VERSION)
+    set(PROJECT_VERSION_FULL ${PROJECT_VERSION})
+else()
+    set(PROJECT_VERSION_FULL "1.0.0")
+endif()
+
+configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/version.h.in
+        ${CMAKE_CURRENT_BINARY_DIR}/version.h
+)
+
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
