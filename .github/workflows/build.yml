@@ -40,7 +40,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: recursive
 
@@ -68,14 +68,14 @@ jobs:
           brew install qt@6
 
       - name: Set up CMake
-        uses: jwlawson/actions-setup-cmake@v1.13
+        uses: jwlawson/actions-setup-cmake@v1.14
         with:
           cmake-version: ${{env.CMAKE_VERSION}}
 
       - name: Configure CMake (Windows)
         if: runner.os == 'Windows'
         run: |
-          cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+          cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DQt6_DIR=${{github.workspace}}/qt/lib/cmake/Qt6
 
       - name: Configure CMake (Unix)
         if: runner.os != 'Windows'
@@ -84,11 +84,6 @@ jobs:
 
       - name: Build
         run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
-
-      # Optional: Run tests if you have them
-      #- name: Test
-      #  working-directory: ${{github.workspace}}/build
-      #  run: ctest -C ${{env.BUILD_TYPE}} --output-on-failure
 
       - name: Package Windows
         if: runner.os == 'Windows'
@@ -101,10 +96,11 @@ jobs:
         if: runner.os != 'Windows'
         run: |
           mkdir ${{github.workspace}}/package
-          cp ${{github.workspace}}/build/n-queens-visualization ${{github.workspace}}/package/
+          cp ${{github.workspace}}/build/recursive_n_queens_mit_qt ${{github.workspace}}/package/
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: n-queens-${{ runner.os }}
           path: ${{github.workspace}}/package/
+          compression-level: 9 # Maximum compression
