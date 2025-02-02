@@ -1,5 +1,4 @@
 #include "mainwindow.h"
-#include <QGraphicsRectItem>
 #include <QGraphicsEllipseItem>
 #include <QThread>
 #include <QApplication>
@@ -38,7 +37,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), N(8), delay(500),
     layout->addLayout(buttonLayout);
 
     // Speed Control Layout
-    QHBoxLayout *speedLayout = new QHBoxLayout();
+    speedLayout = new QHBoxLayout();
     speedLabel = new QLabel("Animation Speed:", centralWidget);
     speedSlider = new QSlider(Qt::Horizontal, centralWidget);
     speedSlider->setMinimum(1);

@@ -33,6 +33,7 @@ private:
     QWidget *centralWidget;
     QVBoxLayout *layout;
     QHBoxLayout *buttonLayout;
+    QHBoxLayout *speedLayout;
 
     QLineEdit *inputField;
     QPushButton *startButton;
