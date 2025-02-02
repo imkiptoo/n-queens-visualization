@@ -1,7 +1,7 @@
 # N-Queens Visualization with Qt
 [![Build and Test](https://github.com/imkiptoo/n-queens-visualization/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/imkiptoo/n-queens-visualization/actions/workflows/build.yml)
 
-This project provides an interactive visualization of the N-Queens problem solving process using backtracking. It demonstrates how the algorithm works by showing each step of queen placement and backtracking in real-time.
+This project provides an interactive visualization of the N-Queens problem-solving process using backtracking. It demonstrates how the algorithm works by showing each step of queen placement and backtracking in real-time.
 
 ![N-Queens Solver Visualization](docs/nqueens.gif)
 
