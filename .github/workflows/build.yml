@@ -8,6 +8,9 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: write
+
 env:
   QT_VERSION: 6.5.0
   CMAKE_VERSION: 3.24.0
@@ -54,17 +57,23 @@ jobs:
         shell: bash
         run: |
           # Get the build number (commit count)
-          echo "BUILD_NUMBER=$(git rev-list --count HEAD)" >> $GITHUB_ENV
+          BUILD_NUMBER=$(git rev-list --count HEAD)
+          echo "BUILD_NUMBER=${BUILD_NUMBER}" >> $GITHUB_ENV
           
           # Get short SHA
-          echo "SHA_SHORT=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+          SHA_SHORT=$(git rev-parse --short HEAD)
+          echo "SHA_SHORT=${SHA_SHORT}" >> $GITHUB_ENV
           
           # Set version based on tag or development build
           if [[ $GITHUB_REF == refs/tags/* ]]; then
-            echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+            VERSION=${GITHUB_REF#refs/tags/}
+            echo "VERSION=${VERSION}" >> $GITHUB_ENV
+            echo "RELEASE_TAG=${VERSION}" >> $GITHUB_ENV
             echo "IS_RELEASE=true" >> $GITHUB_ENV
           else
-            echo "VERSION=dev-build.${{ env.BUILD_NUMBER }}" >> $GITHUB_ENV
+            VERSION="dev-build.${BUILD_NUMBER}"
+            echo "VERSION=${VERSION}" >> $GITHUB_ENV
+            echo "RELEASE_TAG=dev-${SHA_SHORT}" >> $GITHUB_ENV
             echo "IS_RELEASE=false" >> $GITHUB_ENV
           fi
 
@@ -127,11 +136,20 @@ jobs:
             zip -r "../${{env.PROJECT_NAME}}-${{ matrix.config.artifact_name }}-${{ env.VERSION }}.zip" *
           fi
 
+      - name: Delete old development release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: dev-drprasad/delete-tag-and-release@v1.0
+        with:
+          tag_name: dev-latest
+          delete_release: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Create Release
         if: github.event_name != 'pull_request'
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ env.IS_RELEASE == 'true' && env.VERSION || 'dev-build' }}
+          tag_name: ${{ env.IS_RELEASE == 'true' && env.RELEASE_TAG || 'dev-latest' }}
           name: ${{ env.IS_RELEASE == 'true' && format('Release {0}', env.VERSION) || format('Development Build {0} ({1})', env.BUILD_NUMBER, env.SHA_SHORT) }}
           files: |
             ${{env.PROJECT_NAME}}-${{ matrix.config.artifact_name }}-${{ env.VERSION }}.*
