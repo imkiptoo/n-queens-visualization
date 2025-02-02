@@ -5,6 +5,8 @@ This project provides an interactive visualization of the N-Queens problem-solvi
 
 ![N-Queens Solver Visualization](docs/nqueens.gif)
 
+There is longer demo is on [YouTube](https://youtu.be/2kr7Q5xCtKE) 
+
 ## Understanding Backtracking and Implementation
 
 ### What is Backtracking?
