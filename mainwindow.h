@@ -43,6 +43,8 @@ private:
     int N;
     QVector<QVector<int>> board;          // Chessboard matrix
     QVector<QVector<QGraphicsItem*>> boardItems;  // Store graphical items
+    QVector<QGraphicsRectItem*> conflictPathCells;
+    QVector<QVector<QGraphicsRectItem*>> boardCells;
     QTimer *timer;
     int delay;                            // Delay for visualization
 
@@ -59,16 +61,19 @@ private:
     void placeQueen(int row, int col, bool isAttempt = false, int squareSize = 40, int offsetX = 50, int offsetY = 50);
     void removeQueen(int row, int col);
     void highlightConflicts(int row, int col);
+    void highlightConflictPath(const QVector<QPair<int, int>>& path);
     void clearHighlights();
 
     // Constants for visualization
     const QColor ATTEMPT_COLOR = Qt::blue;
     const QColor PLACED_COLOR = Qt::green;
     const QColor CONFLICT_COLOR = Qt::red;
-    const QColor BOARD_LIGHT = QColor(240, 217, 181);
-    const QColor BOARD_DARK = QColor(181, 136, 99);
+    const QColor CONFLICT_LIGHT = QColor(245, 246, 130); // Light red for conflict path
+    const QColor CONFLICT_DARK = QColor(245, 246, 130); // Light red for conflict path
+    const QColor BOARD_LIGHT = QColor(235, 236, 208);
+    const QColor BOARD_DARK = QColor(115, 149, 82);
 
-    QGraphicsEllipseItem* createQueenSymbol(int row, int col, bool isAttempt, int squareSize, int offsetX, int offsetY);
+    QGraphicsItem* createQueenSymbol(int row, int col, bool isAttempt, int squareSize, int offsetX, int offsetY);
     QGraphicsRectItem* createCell(int row, int col, int squareSize, int offsetX, int offsetY);
 };
 
