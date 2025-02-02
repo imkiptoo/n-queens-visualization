@@ -48,7 +48,7 @@ private:
 
     struct State {
         int row, col;
-        bool isAttempt;    // True if this was just an attempt, false if confirmed placement
+        [[maybe_unused]] bool isAttempt;    // True if this was just an attempt, false if confirmed placement
     };
     std::stack<State> queenStack;         // Stack to track backtracking
     int currentCol;                       // Tracks current column
