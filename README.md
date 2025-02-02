@@ -2,6 +2,37 @@
 
 This project provides an interactive visualization of the N-Queens problem solving process using backtracking. It demonstrates how the algorithm works by showing each step of queen placement and backtracking in real-time.
 
+![N-Queens Solver Visualization](docs/nqueens.gif)
+
+## Understanding Backtracking and Implementation
+
+### What is Backtracking?
+Backtracking is a systematic way to iterate through all possible configurations of a search space. It builds candidates for the solution incrementally and abandons each partial candidate ("backtracks") as soon as it determines the candidate cannot possibly lead to a valid solution.
+
+### How This Application Uses Backtracking
+In the N-Queens problem, our application demonstrates backtracking through these steps:
+
+1. **Forward Placement**:
+    - Attempts to place queens column by column
+    - For each column, tries placing a queen in each row from top to bottom
+    - Visually shows attempts in blue
+
+2. **Constraint Checking**:
+    - For each placement, checks if the queen is under attack
+    - Validates horizontal, vertical, and diagonal conflicts
+    - Highlights conflicting queens in red when found
+
+3. **Backtracking Process**:
+    - If no valid position is found in a column, backtracks to the previous column
+    - Removes the previously placed queen (visual removal)
+    - Continues trying from the next untried row in that column
+    - Shows the entire process through color changes (blue→green for success, blue→removal for failure)
+
+4. **Solution Building**:
+    - Successfully placed queens turn green
+    - Builds the solution incrementally, one column at a time
+    - Provides visual feedback for each step of the algorithm
+
 ## Features
 
 - Interactive visualization of the N-Queens solving process
@@ -70,11 +101,27 @@ The visualization demonstrates the backtracking algorithm for solving the N-Quee
 
 ## Technical Details
 
+### Core Components
 - Built using Qt's Graphics View Framework
 - Uses QGraphicsScene for rendering
 - Implements smooth animations with QTimer
 - Handles dynamic resizing while maintaining board proportions
-- Efficient state management for backtracking visualization
+
+### Algorithm Implementation
+- Uses a stack to maintain queen positions for backtracking
+- Implements efficient constraint checking for queen attacks
+- Real-time visualization of the backtracking process
+- State management through matrix representation
+- Concurrent visualization and computation handling
+
+### Visualization Features
+- Color-coded states for better understanding:
+    - Blue: Attempting placement
+    - Green: Successfully placed
+    - Red: Conflict detection
+- Dynamic board sizing and queen placement
+- Smooth transitions between states
+- Real-time speed adjustment
 
 ## Project Structure
 
@@ -108,4 +155,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - Save and load board configurations
 - Export solutions to file
 - Multiple solution display
-- Statistical analysis of solving process# n-queens-visualization
+- Statistical analysis of solving process
