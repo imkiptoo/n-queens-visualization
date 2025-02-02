@@ -199,7 +199,7 @@ void MainWindow::removeQueen(int row, int col) {
 
 void MainWindow::highlightConflicts(int row, int col) {
     if (boardItems[row][col]) {
-        QGraphicsEllipseItem *queen = qgraphicsitem_cast<QGraphicsEllipseItem *>(boardItems[row][col]);
+        auto *queen = qgraphicsitem_cast<QGraphicsEllipseItem *>(boardItems[row][col]);
         if (queen) {
             queen->setBrush(QBrush(CONFLICT_COLOR));
         }
@@ -210,7 +210,7 @@ void MainWindow::clearHighlights() {
     for (int i = 0; i < N; i++) {
         for (int j = 0; j < N; j++) {
             if (board[i][j] == 1 && boardItems[i][j]) {
-                QGraphicsEllipseItem *queen = qgraphicsitem_cast<QGraphicsEllipseItem *>(boardItems[i][j]);
+                auto *queen = qgraphicsitem_cast<QGraphicsEllipseItem *>(boardItems[i][j]);
                 if (queen) {
                     queen->setBrush(QBrush(PLACED_COLOR));
                 }
